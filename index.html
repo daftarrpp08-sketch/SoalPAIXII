@@ -581,22 +581,28 @@
       <div id="statusResetSiswa"></div>
     </div>
 
-    <div class="panel panel-highlight" style="margin-top:20px; border-left: 6px solid var(--accent-green);">
-      <h3>💾 11. Simpan Semua Pengaturan &amp; Download File HTML</h3>
+    <div class="panel panel-highlight" id="panelSimpanPermanen" style="margin-top:20px; border-left: 6px solid var(--accent-green);">
+      <h3>💾 11. Menu Simpan Permanent HTML</h3>
       <p style="font-size:13px; margin:0 0 10px 0; color:var(--text-primary);">
-        Gunakan tombol di bawah untuk <strong>menyimpan seluruh perubahan pengaturan</strong> yang sudah dilakukan (Judul, Token, Password, Durasi, Jumlah Soal, Excel Soal, Pengacakan, Status Reset, Score/KKM, Batas Pelanggaran, dan Google Sheet URL) agar tidak hilang, atau langsung mendownload file HTML versi terbaru.
+        Menu ini digunakan untuk <strong>menyimpan seluruh pengaturan secara permanent ke dalam file HTML</strong> (Judul, Token, Password, Durasi, Jumlah Soal, Excel Soal, Pengacakan, Status Reset, Score/KKM, Batas Pelanggaran, dan Google Sheet URL).
       </p>
-      <div class="alert-info">
+      <div class="panel-row" style="margin-bottom:12px;">
+        <label style="margin:0; font-weight:bold;">Otomatis Simpan Permanent HTML:</label>
+        <label class="toggle-switch"><input type="checkbox" id="toggleAutoSaveHTML" onchange="simpanAutoSaveHTMLToggle()"><span class="slider"></span></label>
+        <span id="statusAutoSaveHTML" class="status-badge status-on">AKTIF</span>
+      </div>
+      <p class="info-small">⚠️ Ketika fitur ini <strong>AKTIF</strong>, setiap terjadi perubahan pengaturan pada Dashboard Guru, HTML akan tersimpan secara permanent secara otomatis.</p>
+      <div class="alert-info" style="margin-top:10px;">
         <strong>📋 Langkah-langkah Simpan &amp; Distribusi:</strong>
         <ol class="step-list">
-          <li>Klik tombol <strong>"💾 Simpan Semua Pengaturan"</strong> di bawah untuk menyimpan perubahan.</li>
-          <li>Klik <strong>" Download HTML Terbaru"</strong> untuk mengunduh file HTML baru.</li>
+          <li>Pengaturan yang diubah akan tersimpan otomatis jika fitur "Otomatis Simpan Permanent HTML" diaktifkan.</li>
+          <li>Atau klik tombol <strong>"💾 Simpan Permanent HTML"</strong> di bawah untuk mengunduh file HTML secara manual.</li>
           <li>Ganti file HTML lama di hosting / GitHub Pages dengan file baru ini.</li>
         </ol>
       </div>
       <div class="panel-row" style="margin-top:15px; flex-wrap: wrap; gap: 10px; align-items: center;">
-        <button class="btn btn-success" onclick="simpanSemuaPengaturan()" style="padding:12px 25px; font-size:15px; font-weight:bold;">💾 Simpan Semua Pengaturan</button>
-        <button class="btn btn-primary" onclick="simpanPermanenKeHTML()" style="padding:12px 25px; font-size:15px; font-weight:bold; background:var(--accent-blue);"> Download HTML Terbaru</button>
+        <button class="btn btn-success" onclick="simpanSemuaPengaturan()" style="padding:12px 25px; font-size:15px; font-weight:bold;">💾 Simpan Pengaturan</button>
+        <button class="btn btn-primary" onclick="simpanPermanenKeHTML()" style="padding:12px 25px; font-size:15px; font-weight:bold; background:var(--accent-blue);">💾 Simpan Permanent HTML</button>
         <span style="font-size:13px; color:var(--text-secondary); margin-left: auto;">Versi: <strong id="currentVersionDisplay">v5.12</strong></span>
       </div>
       <div id="statusSimpanSemua" style="margin-top:10px;"></div>
@@ -655,6 +661,7 @@ const JUMLAH_SOAL_DEFAULT = 0;
 const ACAK_DEFAULT = true;
 const ACAK_OPSI_DEFAULT = true;
 const ENABLE_RESET_DEFAULT = false;
+const AUTO_SAVE_HTML_DEFAULT = true;
 const MAX_PELANGGARAN_DEFAULT = 6;
 const NILAI_MAKSIMAL_DEFAULT = 100;
 const NILAI_KKM_DEFAULT = 75;
@@ -668,6 +675,7 @@ let configJumlahSoal = parseInt(localStorage.getItem('configJumlahSoal') || (typ
 let configAcak = localStorage.getItem('configAcak') !== null ? localStorage.getItem('configAcak') === 'true' : (typeof ACAK_DEFAULT !== 'undefined' ? ACAK_DEFAULT : true);
 let configAcakOpsi = localStorage.getItem('configAcakOpsi') !== null ? localStorage.getItem('configAcakOpsi') === 'true' : (typeof ACAK_OPSI_DEFAULT !== 'undefined' ? ACAK_OPSI_DEFAULT : true);
 let configEnableReset = localStorage.getItem('configEnableReset') !== null ? localStorage.getItem('configEnableReset') === 'true' : (typeof ENABLE_RESET_DEFAULT !== 'undefined' ? ENABLE_RESET_DEFAULT : false);
+let configAutoSaveHTML = localStorage.getItem('configAutoSaveHTML') !== null ? localStorage.getItem('configAutoSaveHTML') === 'true' : (typeof AUTO_SAVE_HTML_DEFAULT !== 'undefined' ? AUTO_SAVE_HTML_DEFAULT : true);
 let configMaxPelanggaran = parseInt(localStorage.getItem('configMaxPelanggaran') || (typeof MAX_PELANGGARAN_DEFAULT !== 'undefined' ? MAX_PELANGGARAN_DEFAULT : 6));
 let configNilaiMaksimal = parseInt(localStorage.getItem('configNilaiMaksimal') || (typeof NILAI_MAKSIMAL_DEFAULT !== 'undefined' ? NILAI_MAKSIMAL_DEFAULT : 100));
 let configNilaiKKM = parseInt(localStorage.getItem('configNilaiKKM') || (typeof NILAI_KKM_DEFAULT !== 'undefined' ? NILAI_KKM_DEFAULT : 75));
@@ -685,7 +693,7 @@ const UKURAN_KERTAS = {
 
 const savedVersion = localStorage.getItem('htmlVersion');
 if (savedVersion !== HTML_VERSION) {
-  ['configJudul','configSubJudul','configPassword','configToken','configGoogleSheetUrl','configDurasi','configJumlahSoal','configAcak','configAcakOpsi','configEnableReset','configMaxPelanggaran','configNilaiMaksimal','configNilaiKKM','configTampilNilai','soalAktif'].forEach(k => localStorage.removeItem(k));
+  ['configJudul','configSubJudul','configPassword','configToken','configGoogleSheetUrl','configDurasi','configJumlahSoal','configAcak','configAcakOpsi','configEnableReset','configAutoSaveHTML','configMaxPelanggaran','configNilaiMaksimal','configNilaiKKM','configTampilNilai','soalAktif'].forEach(k => localStorage.removeItem(k));
   localStorage.setItem('htmlVersion', HTML_VERSION);
 }
 
@@ -748,10 +756,41 @@ function loadDashboardData() {
   document.getElementById('toggleAcak').checked = configAcak;
   document.getElementById('toggleAcakOpsi').checked = configAcakOpsi;
   document.getElementById('toggleEnableReset').checked = configEnableReset;
-  updateStatusAcak(); updateStatusAcakOpsi(); updateStatusEnableReset();
+  document.getElementById('toggleAutoSaveHTML').checked = configAutoSaveHTML;
+  updateStatusAcak(); updateStatusAcakOpsi(); updateStatusEnableReset(); updateStatusAutoSaveHTML();
   document.getElementById('jumlahSoalSaatIni').innerText = soalAktif.length;
   document.getElementById('versionBadge').innerText = 'v' + HTML_VERSION;
   document.getElementById('currentVersionDisplay').innerText = 'v' + HTML_VERSION;
+}
+
+let autoSaveDebounceTimer = null;
+function triggerAutoSavePermanentHTML() {
+  if (!configAutoSaveHTML) return;
+  if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
+  autoSaveDebounceTimer = setTimeout(() => {
+    simpanPermanenKeHTML(true);
+  }, 1000);
+}
+
+function simpanAutoSaveHTMLToggle() {
+  configAutoSaveHTML = document.getElementById('toggleAutoSaveHTML').checked;
+  localStorage.setItem('configAutoSaveHTML', configAutoSaveHTML);
+  updateStatusAutoSaveHTML();
+  if (configAutoSaveHTML) {
+    triggerAutoSavePermanentHTML();
+  }
+}
+
+function updateStatusAutoSaveHTML() {
+  const status = document.getElementById('statusAutoSaveHTML');
+  if (!status) return;
+  if (configAutoSaveHTML) {
+    status.innerText = 'AKTIF';
+    status.className = 'status-badge status-on';
+  } else {
+    status.innerText = 'NONAKTIF';
+    status.className = 'status-badge status-off';
+  }
 }
 
 function simpanPengaturanNilai() {
@@ -777,6 +816,7 @@ function simpanPengaturanNilai() {
   localStorage.setItem('configTampilNilai', configTampilNilai);
 
   document.getElementById('statusPengaturanNilai').innerHTML = '<div class="alert-success">✅ Pengaturan Score berhasil disimpan! Maksimal: <strong>' + configNilaiMaksimal + '</strong>, KKM: <strong>' + configNilaiKKM + '</strong>, Tampilkan: <strong>' + (configTampilNilai ? 'Ya' : 'Tidak') + '</strong></div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function resetPengaturanNilai() {
@@ -793,6 +833,7 @@ function resetPengaturanNilai() {
   document.getElementById('selectTampilNilai').value = "true";
 
   document.getElementById('statusPengaturanNilai').innerHTML = '<div class="alert-success">✅ Pengaturan score direset ke default (Maksimal: 100, KKM: 75, Tampilkan: Ya).</div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function salinKodeGas() {
@@ -816,7 +857,8 @@ function simpanGoogleSheet() {
   const url = document.getElementById('inputGoogleSheet').value.trim();
   configGoogleSheetUrl = url;
   localStorage.setItem('configGoogleSheetUrl', configGoogleSheetUrl);
-  document.getElementById('statusGoogleSheet').innerHTML = '<div class="alert-success">✅ URL Google Apps Script berhasil disimpan di perangkat ini!<br>📌 <strong>PENTING:</strong> Klik tombol <strong>"💾 Download HTML Terbaru"</strong> di bawah lalu ganti file di GitHub Pages/hosting Anda agar URL otomatis terpasang di seluruh HP/perangkat siswa tanpa perlu copy-paste lagi.</div>';
+  document.getElementById('statusGoogleSheet').innerHTML = '<div class="alert-success">✅ URL Google Apps Script berhasil disimpan di perangkat ini!</div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function resetGoogleSheet() {
@@ -825,6 +867,7 @@ function resetGoogleSheet() {
   localStorage.setItem('configGoogleSheetUrl', '');
   document.getElementById('inputGoogleSheet').value = '';
   document.getElementById('statusGoogleSheet').innerHTML = '<div class="alert-info">ℹ️ URL Google Apps Script dikosongkan.</div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function tesKirimGoogleSheet() {
@@ -860,7 +903,8 @@ function simpanJudul() {
   configJudul = judul; configSubJudul = subJudul; configToken = token;
   localStorage.setItem('configJudul', configJudul); localStorage.setItem('configSubJudul', configSubJudul); localStorage.setItem('configToken', configToken);
   updateJudulDiSemuaTempat();
-  document.getElementById('statusJudul').innerHTML = '<div class="alert-success">✅ Berhasil disimpan. Klik "Download HTML Terbaru" di Panel 9!</div>';
+  document.getElementById('statusJudul').innerHTML = '<div class="alert-success">✅ Berhasil disimpan!</div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function resetJudul() {
@@ -870,6 +914,7 @@ function resetJudul() {
   document.getElementById('inputJudul').value = configJudul; document.getElementById('inputSubJudul').value = configSubJudul; document.getElementById('inputToken').value = configToken;
   updateJudulDiSemuaTempat();
   document.getElementById('statusJudul').innerHTML = '<div class="alert-success">✅ Direset ke default</div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function togglePwd(inputId) { const input = document.getElementById(inputId); input.type = input.type === 'password' ? 'text' : 'password'; }
@@ -895,6 +940,7 @@ function ubahPassword() {
   document.getElementById('pwdLama').value = ''; document.getElementById('pwdBaru').value = ''; document.getElementById('pwdKonfirmasi').value = '';
   document.getElementById('pwdStrength').innerHTML = ''; updatePasswordDisplay();
   document.getElementById('statusPassword').innerHTML = '<div class="alert-success">✅ Password berhasil diubah!</div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function resetPasswordDefault() {
@@ -903,6 +949,7 @@ function resetPasswordDefault() {
   document.getElementById('pwdLama').value = ''; document.getElementById('pwdBaru').value = ''; document.getElementById('pwdKonfirmasi').value = '';
   updatePasswordDisplay();
   document.getElementById('statusPassword').innerHTML = '<div class="alert-success">✅ Password direset ke: <strong>guru123</strong></div>';
+  triggerAutoSavePermanentHTML();
 }
 
 function simpanWaktu() {
@@ -911,6 +958,7 @@ function simpanWaktu() {
   configDurasi = waktu; localStorage.setItem('configDurasi', configDurasi);
   document.getElementById('statusWaktu').innerHTML = '<div class="alert-success">✅ Waktu disimpan: <strong>' + configDurasi + ' menit</strong></div>';
   updateInfoWaktu();
+  triggerAutoSavePermanentHTML();
 }
 
 function simpanJumlahSoal() {
@@ -919,6 +967,7 @@ function simpanJumlahSoal() {
   configJumlahSoal = jml; localStorage.setItem('configJumlahSoal', configJumlahSoal);
   document.getElementById('statusWaktu').innerHTML = '<div class="alert-success">✅ Jumlah soal: <strong>' + (configJumlahSoal === 0 ? 'Semua' : configJumlahSoal) + '</strong></div>';
   updateInfoWaktu();
+  triggerAutoSavePermanentHTML();
 }
 
 function updateInfoWaktu() {
@@ -956,6 +1005,7 @@ function importExcel(event) {
       soalAktif = soalBaru; localStorage.setItem('soalAktif', JSON.stringify(soalBaru));
       document.getElementById('statusImport').innerHTML = '<div class="alert-success">✅ Berhasil import <strong>' + soalBaru.length + ' soal</strong>.</div>';
       document.getElementById('jumlahSoalSaatIni').innerText = soalAktif.length; tampilkanPreview(soalBaru);
+      triggerAutoSavePermanentHTML();
     } catch (err) { document.getElementById('statusImport').innerHTML = '<div class="alert-error">❌ Error: ' + err.message + '</div>'; }
     finally { if (inputElement) inputElement.value = ''; }
   };
@@ -982,11 +1032,12 @@ function resetSoalDefault() {
   document.getElementById('jumlahSoalSaatIni').innerText = soalAktif.length;
   document.getElementById('previewSoal').innerHTML = '';
   document.getElementById('statusImport').innerHTML = '<div class="alert-success">✅ Soal direset ke default</div>';
+  triggerAutoSavePermanentHTML();
 }
 
-function simpanAcak() { configAcak = document.getElementById('toggleAcak').checked; localStorage.setItem('configAcak', configAcak); updateStatusAcak(); }
-function simpanAcakOpsi() { configAcakOpsi = document.getElementById('toggleAcakOpsi').checked; localStorage.setItem('configAcakOpsi', configAcakOpsi); updateStatusAcakOpsi(); }
-function simpanEnableReset() { configEnableReset = document.getElementById('toggleEnableReset').checked; localStorage.setItem('configEnableReset', configEnableReset); updateStatusEnableReset(); updateResetButtonVisibility(); }
+function simpanAcak() { configAcak = document.getElementById('toggleAcak').checked; localStorage.setItem('configAcak', configAcak); updateStatusAcak(); triggerAutoSavePermanentHTML(); }
+function simpanAcakOpsi() { configAcakOpsi = document.getElementById('toggleAcakOpsi').checked; localStorage.setItem('configAcakOpsi', configAcakOpsi); updateStatusAcakOpsi(); triggerAutoSavePermanentHTML(); }
+function simpanEnableReset() { configEnableReset = document.getElementById('toggleEnableReset').checked; localStorage.setItem('configEnableReset', configEnableReset); updateStatusEnableReset(); updateResetButtonVisibility(); triggerAutoSavePermanentHTML(); }
 function updateStatusAcak() { const status = document.getElementById('statusAcak'); if (configAcak) { status.innerText = 'AKTIF'; status.className = 'status-badge status-on'; } else { status.innerText = 'NONAKTIF'; status.className = 'status-badge status-off'; } }
 function updateStatusAcakOpsi() { const status = document.getElementById('statusAcakOpsi'); if (configAcakOpsi) { status.innerText = 'AKTIF'; status.className = 'status-badge status-on'; } else { status.innerText = 'NONAKTIF'; status.className = 'status-badge status-off'; } }
 function updateStatusEnableReset() { const status = document.getElementById('statusEnableReset'); if (!status) return; if (configEnableReset) { status.innerText = 'AKTIF (Latihan)'; status.className = 'status-badge status-on'; } else { status.innerText = 'NONAKTIF (Mode UJIAN)'; status.className = 'status-badge status-off'; } }
@@ -1016,6 +1067,7 @@ function simpanMaxPelanggaran() {
   configMaxPelanggaran = max; localStorage.setItem('configMaxPelanggaran', configMaxPelanggaran);
   document.getElementById('statusMaxPelanggaran').innerHTML = '<div class="alert-success">✅ Batas pelanggaran disimpan: <strong>' + configMaxPelanggaran + ' kali</strong>.</div>';
   updateInfoWaktu();
+  triggerAutoSavePermanentHTML();
 }
 
 function resetMaxPelanggaran() {
@@ -1023,6 +1075,7 @@ function resetMaxPelanggaran() {
   document.getElementById('inputMaxPelanggaran').value = 5;
   document.getElementById('statusMaxPelanggaran').innerHTML = '<div class="alert-success">✅ Batas pelanggaran direset ke: <strong>5 kali</strong></div>';
   updateInfoWaktu();
+  triggerAutoSavePermanentHTML();
 }
 
 function getPengaturanCetak() {
@@ -1248,10 +1301,12 @@ function simpanSemuaPengaturan() {
     configAcak = document.getElementById('toggleAcak').checked;
     configAcakOpsi = document.getElementById('toggleAcakOpsi').checked;
     configEnableReset = document.getElementById('toggleEnableReset').checked;
+    configAutoSaveHTML = document.getElementById('toggleAutoSaveHTML').checked;
     localStorage.setItem('configAcak', configAcak);
     localStorage.setItem('configAcakOpsi', configAcakOpsi);
     localStorage.setItem('configEnableReset', configEnableReset);
-    updateStatusAcak(); updateStatusAcakOpsi(); updateStatusEnableReset(); updateResetButtonVisibility();
+    localStorage.setItem('configAutoSaveHTML', configAutoSaveHTML);
+    updateStatusAcak(); updateStatusAcakOpsi(); updateStatusEnableReset(); updateStatusAutoSaveHTML(); updateResetButtonVisibility();
 
     const maxScore = parseInt(document.getElementById('inputNilaiMaksimal').value);
     const kkm = parseInt(document.getElementById('inputNilaiKKM').value);
@@ -1303,9 +1358,11 @@ function simpanSemuaPengaturan() {
 
 function incrementVersion(v) { const parts = v.split('.').map(Number); parts[parts.length - 1]++; return parts.join('.'); }
 
-function simpanPermanenKeHTML() {
-  simpanSemuaPengaturan();
-  if (!confirm('File HTML baru akan didownload dengan semua perubahan saat ini.\n\nSetelah download, ganti file HTML lama di hosting dengan file baru ini.\n\nLanjutkan?')) return;
+function simpanPermanenKeHTML(isAutoSave = false) {
+  if (!isAutoSave) {
+    simpanSemuaPengaturan();
+    if (!confirm('File HTML baru akan didownload dengan semua perubahan saat ini.\n\nSetelah download, ganti file HTML lama di hosting dengan file baru ini.\n\nLanjutkan?')) return;
+  }
   try {
     const savedState = { menuAwal: document.getElementById('menuAwal').style.display, identityForm: document.getElementById('identityForm').style.display, dashboardGuru: document.getElementById('dashboardGuru').style.display, quizArea: document.getElementById('quizArea').style.display, resultArea: document.getElementById('resultArea').style.display, loginModal: document.getElementById('loginModal').style.display, resetModal: document.getElementById('resetModal').style.display, violationOverlay: document.getElementById('violationOverlay').style.display };
     document.getElementById('menuAwal').style.display = 'block'; document.getElementById('identityForm').style.display = 'none'; document.getElementById('dashboardGuru').style.display = 'none'; document.getElementById('quizArea').style.display = 'none'; document.getElementById('resultArea').style.display = 'none'; document.getElementById('loginModal').style.display = 'none'; document.getElementById('resetModal').style.display = 'none'; document.getElementById('violationOverlay').style.display = 'none';
@@ -1314,8 +1371,8 @@ function simpanPermanenKeHTML() {
     document.getElementById('menuAwal').style.display = savedState.menuAwal; document.getElementById('identityForm').style.display = savedState.identityForm; document.getElementById('dashboardGuru').style.display = savedState.dashboardGuru; document.getElementById('quizArea').style.display = savedState.quizArea; document.getElementById('resultArea').style.display = savedState.resultArea; document.getElementById('loginModal').style.display = savedState.loginModal; document.getElementById('resetModal').style.display = savedState.resetModal; document.getElementById('violationOverlay').style.display = savedState.violationOverlay;
     const newVersion = incrementVersion(HTML_VERSION);
     localStorage.setItem('htmlVersion', newVersion);
-    const newConfigBlock = '// __CONFIG_START__\nconst JUDUL_DEFAULT = ' + JSON.stringify(configJudul) + ';\nconst SUBJUDUL_DEFAULT = ' + JSON.stringify(configSubJudul) + ';\nconst PASSWORD_DEFAULT = ' + JSON.stringify(PASSWORD_GURU) + ';\nconst TOKEN_DEFAULT = ' + JSON.stringify(configToken) + ';\nconst GOOGLE_SHEET_URL_DEFAULT = ' + JSON.stringify(configGoogleSheetUrl) + ';\nconst DURASI_DEFAULT = ' + JSON.stringify(configDurasi) + ';\nconst JUMLAH_SOAL_DEFAULT = ' + JSON.stringify(configJumlahSoal) + ';\nconst ACAK_DEFAULT = ' + JSON.stringify(configAcak) + ';\nconst ACAK_OPSI_DEFAULT = ' + JSON.stringify(configAcakOpsi) + ';\nconst ENABLE_RESET_DEFAULT = ' + JSON.stringify(configEnableReset) + ';\nconst MAX_PELANGGARAN_DEFAULT = ' + JSON.stringify(configMaxPelanggaran) + ';\nconst NILAI_MAKSIMAL_DEFAULT = ' + JSON.stringify(configNilaiMaksimal) + ';\nconst NILAI_KKM_DEFAULT = ' + JSON.stringify(configNilaiKKM) + ';\nconst TAMPIL_NILAI_DEFAULT = ' + JSON.stringify(configTampilNilai) + ';\nconst SOAL_DEFAULT = ' + JSON.stringify(soalAktif) + ';\n// __CONFIG_END__';
-    const newRuntimeConfigBlock = '// __RUNTIME_CONFIG_START__\nlet configDurasi = parseInt(localStorage.getItem(\'configDurasi\') || (typeof DURASI_DEFAULT !== \'undefined\' ? DURASI_DEFAULT : ' + configDurasi + '));\nlet configJumlahSoal = parseInt(localStorage.getItem(\'configJumlahSoal\') || (typeof JUMLAH_SOAL_DEFAULT !== \'undefined\' ? JUMLAH_SOAL_DEFAULT : ' + configJumlahSoal + '));\nlet configAcak = localStorage.getItem(\'configAcak\') !== null ? localStorage.getItem(\'configAcak\') === \'true\' : (typeof ACAK_DEFAULT !== \'undefined\' ? ACAK_DEFAULT : ' + configAcak + ');\nlet configAcakOpsi = localStorage.getItem(\'configAcakOpsi\') !== null ? localStorage.getItem(\'configAcakOpsi\') === \'true\' : (typeof ACAK_OPSI_DEFAULT !== \'undefined\' ? ACAK_OPSI_DEFAULT : ' + configAcakOpsi + ');\nlet configEnableReset = localStorage.getItem(\'configEnableReset\') !== null ? localStorage.getItem(\'configEnableReset\') === \'true\' : (typeof ENABLE_RESET_DEFAULT !== \'undefined\' ? ENABLE_RESET_DEFAULT : ' + configEnableReset + ');\nlet configMaxPelanggaran = parseInt(localStorage.getItem(\'configMaxPelanggaran\') || (typeof MAX_PELANGGARAN_DEFAULT !== \'undefined\' ? MAX_PELANGGARAN_DEFAULT : ' + configMaxPelanggaran + '));\nlet configNilaiMaksimal = parseInt(localStorage.getItem(\'configNilaiMaksimal\') || (typeof NILAI_MAKSIMAL_DEFAULT !== \'undefined\' ? NILAI_MAKSIMAL_DEFAULT : ' + configNilaiMaksimal + '));\nlet configNilaiKKM = parseInt(localStorage.getItem(\'configNilaiKKM\') || (typeof NILAI_KKM_DEFAULT !== \'undefined\' ? NILAI_KKM_DEFAULT : ' + configNilaiKKM + '));\nlet configTampilNilai = localStorage.getItem(\'configTampilNilai\') !== null ? localStorage.getItem(\'configTampilNilai\') !== \'false\' : (typeof TAMPIL_NILAI_DEFAULT !== \'undefined\' ? TAMPIL_NILAI_DEFAULT : ' + configTampilNilai + ');\n// __RUNTIME_CONFIG_END__';
+    const newConfigBlock = '// __CONFIG_START__\nconst JUDUL_DEFAULT = ' + JSON.stringify(configJudul) + ';\nconst SUBJUDUL_DEFAULT = ' + JSON.stringify(configSubJudul) + ';\nconst PASSWORD_DEFAULT = ' + JSON.stringify(PASSWORD_GURU) + ';\nconst TOKEN_DEFAULT = ' + JSON.stringify(configToken) + ';\nconst GOOGLE_SHEET_URL_DEFAULT = ' + JSON.stringify(configGoogleSheetUrl) + ';\nconst DURASI_DEFAULT = ' + JSON.stringify(configDurasi) + ';\nconst JUMLAH_SOAL_DEFAULT = ' + JSON.stringify(configJumlahSoal) + ';\nconst ACAK_DEFAULT = ' + JSON.stringify(configAcak) + ';\nconst ACAK_OPSI_DEFAULT = ' + JSON.stringify(configAcakOpsi) + ';\nconst ENABLE_RESET_DEFAULT = ' + JSON.stringify(configEnableReset) + ';\nconst AUTO_SAVE_HTML_DEFAULT = ' + JSON.stringify(configAutoSaveHTML) + ';\nconst MAX_PELANGGARAN_DEFAULT = ' + JSON.stringify(configMaxPelanggaran) + ';\nconst NILAI_MAKSIMAL_DEFAULT = ' + JSON.stringify(configNilaiMaksimal) + ';\nconst NILAI_KKM_DEFAULT = ' + JSON.stringify(configNilaiKKM) + ';\nconst TAMPIL_NILAI_DEFAULT = ' + JSON.stringify(configTampilNilai) + ';\nconst SOAL_DEFAULT = ' + JSON.stringify(soalAktif) + ';\n// __CONFIG_END__';
+    const newRuntimeConfigBlock = '// __RUNTIME_CONFIG_START__\nlet configDurasi = parseInt(localStorage.getItem(\'configDurasi\') || (typeof DURASI_DEFAULT !== \'undefined\' ? DURASI_DEFAULT : ' + configDurasi + '));\nlet configJumlahSoal = parseInt(localStorage.getItem(\'configJumlahSoal\') || (typeof JUMLAH_SOAL_DEFAULT !== \'undefined\' ? JUMLAH_SOAL_DEFAULT : ' + configJumlahSoal + '));\nlet configAcak = localStorage.getItem(\'configAcak\') !== null ? localStorage.getItem(\'configAcak\') === \'true\' : (typeof ACAK_DEFAULT !== \'undefined\' ? ACAK_DEFAULT : ' + configAcak + ');\nlet configAcakOpsi = localStorage.getItem(\'configAcakOpsi\') !== null ? localStorage.getItem(\'configAcakOpsi\') === \'true\' : (typeof ACAK_OPSI_DEFAULT !== \'undefined\' ? ACAK_OPSI_DEFAULT : ' + configAcakOpsi + ');\nlet configEnableReset = localStorage.getItem(\'configEnableReset\') !== null ? localStorage.getItem(\'configEnableReset\') === \'true\' : (typeof ENABLE_RESET_DEFAULT !== \'undefined\' ? ENABLE_RESET_DEFAULT : ' + configEnableReset + ');\nlet configAutoSaveHTML = localStorage.getItem(\'configAutoSaveHTML\') !== null ? localStorage.getItem(\'configAutoSaveHTML\') === \'true\' : (typeof AUTO_SAVE_HTML_DEFAULT !== \'undefined\' ? AUTO_SAVE_HTML_DEFAULT : ' + configAutoSaveHTML + ');\nlet configMaxPelanggaran = parseInt(localStorage.getItem(\'configMaxPelanggaran\') || (typeof MAX_PELANGGARAN_DEFAULT !== \'undefined\' ? MAX_PELANGGARAN_DEFAULT : ' + configMaxPelanggaran + '));\nlet configNilaiMaksimal = parseInt(localStorage.getItem(\'configNilaiMaksimal\') || (typeof NILAI_MAKSIMAL_DEFAULT !== \'undefined\' ? NILAI_MAKSIMAL_DEFAULT : ' + configNilaiMaksimal + '));\nlet configNilaiKKM = parseInt(localStorage.getItem(\'configNilaiKKM\') || (typeof NILAI_KKM_DEFAULT !== \'undefined\' ? NILAI_KKM_DEFAULT : ' + configNilaiKKM + '));\nlet configTampilNilai = localStorage.getItem(\'configTampilNilai\') !== null ? localStorage.getItem(\'configTampilNilai\') !== \'false\' : (typeof TAMPIL_NILAI_DEFAULT !== \'undefined\' ? TAMPIL_NILAI_DEFAULT : ' + configTampilNilai + ');\n// __RUNTIME_CONFIG_END__';
     html = html.replace(/\/\/ __CONFIG_START__[\s\S]*?\/\/ __CONFIG_END__/, () => newConfigBlock);
     html = html.replace(/\/\/ __RUNTIME_CONFIG_START__[\s\S]*?\/\/ __RUNTIME_CONFIG_END__/, () => newRuntimeConfigBlock);
     html = html.replace(/const HTML_VERSION = "[^"]*";/, 'const HTML_VERSION = "' + newVersion + '";');
