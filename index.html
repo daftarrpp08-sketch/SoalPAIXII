@@ -572,7 +572,59 @@
     </div>
 
     <div class="panel">
-      <h3>🗑️ 10. Reset Data Siswa &amp; Data Ter-Embed</h3>
+      <h3>🐙 10. Integrasi GitHub Auto-Sync (Update Langsung di Web GitHub)</h3>
+      <p style="font-size:13px; margin:0 0 10px 0; color:var(--text-secondary);">Atur token dan repositori GitHub agar setiap perubahan data/pengaturan langsung ter-commit dan ter-update di website GitHub Pages tanpa harus download HTML.</p>
+      <div class="form-group">
+        <label>Personal Access Token (PAT) GitHub:</label>
+        <div class="password-wrapper">
+          <input type="password" id="inputGithubToken" class="input-judul" placeholder="ghp_... atau github_pat_...">
+          <button type="button" class="password-toggle" onclick="togglePwd('inputGithubToken')">👁️</button>
+        </div>
+      </div>
+      <div class="panel-row" style="margin-bottom:10px;">
+        <div class="form-group" style="flex:1; min-width:150px; margin-bottom:0;">
+          <label>Owner / Username GitHub:</label>
+          <input type="text" id="inputGithubOwner" placeholder="Contoh: username-anda">
+        </div>
+        <div class="form-group" style="flex:1; min-width:150px; margin-bottom:0;">
+          <label>Nama Repository:</label>
+          <input type="text" id="inputGithubRepo" placeholder="Contoh: evaluasi-pkk">
+        </div>
+      </div>
+      <div class="panel-row" style="margin-bottom:10px;">
+        <div class="form-group" style="flex:1; min-width:150px; margin-bottom:0;">
+          <label>Path File HTML di Repo:</label>
+          <input type="text" id="inputGithubPath" placeholder="default: index.html">
+        </div>
+        <div class="form-group" style="flex:1; min-width:150px; margin-bottom:0;">
+          <label>Branch Target:</label>
+          <input type="text" id="inputGithubBranch" placeholder="default: main">
+        </div>
+      </div>
+      <div class="panel-row" style="margin-bottom:12px;">
+        <label style="margin:0; font-weight:bold;">Otomatis Auto-Sync / Push ke GitHub saat Ada Perubahan Data:</label>
+        <label class="toggle-switch"><input type="checkbox" id="toggleAutoPushGithub" onchange="simpanAutoPushGithubToggle()"><span class="slider"></span></label>
+        <span id="statusAutoPushGithub" class="status-badge status-off">NONAKTIF</span>
+      </div>
+      <div class="panel-row" style="gap:8px;">
+        <button class="btn btn-success" onclick="simpanKonfigurasiGithub()" style="padding:8px 15px; font-size:13px;">💾 Simpan Konfigurasi GitHub</button>
+        <button class="btn btn-primary" onclick="syncKeGitHubManually()" style="padding:8px 15px; font-size:13px; background:var(--accent-blue);">⚡ Sync Langsung ke GitHub</button>
+        <button class="btn btn-warning" onclick="tesKoneksiGithub()" style="padding:8px 15px; font-size:13px;">🧪 Tes Koneksi GitHub</button>
+      </div>
+      <div id="statusGithubSync" style="margin-top:10px;"></div>
+      <div class="alert-info" style="margin-top:10px;">
+        💡 <strong>Panduan Membuat Personal Access Token (PAT) GitHub:</strong>
+        <ol class="step-list">
+          <li>Login ke akun GitHub Anda, lalu buka <strong>Settings &gt; Developer Settings &gt; Personal access tokens &gt; Tokens (classic)</strong> (atau Fine-grained tokens).</li>
+          <li>Klik <strong>Generate new token</strong>.</li>
+          <li>Beri nama/note (misal: <em>Aplikasi Evaluasi PKK</em>) dan set masa berlaku (Expiration).</li>
+          <li>Centang centang izin <strong>repo</strong> (untuk Classic Token) atau berikan izin <strong>Contents: Read and write</strong> (untuk Fine-grained token).</li>
+          <li>Klik <strong>Generate token</strong>, salin kode token tersebut (awalan <code>ghp_</code> / <code>github_pat_</code>) dan tempel pada kolom di atas.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>🗑️ 11. Reset Data Siswa &amp; Data Ter-Embed</h3>
       <p style="font-size:13px; margin:0 0 10px 0; color:var(--text-secondary);">Hapus semua data siswa yang sedang/sudah ujian agar file HTML yang dibagikan benar-benar bersih tanpa bekas data.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-danger" onclick="resetDataSiswa()" style="padding:8px 15px; font-size:13px;">🗑️ Reset Data Siswa</button>
@@ -582,7 +634,7 @@
     </div>
 
     <div class="panel panel-highlight" id="panelSimpanPermanen" style="margin-top:20px; border-left: 6px solid var(--accent-green);">
-      <h3>💾 11. Menu Simpan Permanent HTML</h3>
+      <h3>💾 12. Menu Simpan Permanent HTML</h3>
       <p style="font-size:13px; margin:0 0 10px 0; color:var(--text-primary);">
         Menu ini digunakan untuk <strong>menyimpan seluruh pengaturan secara permanent ke dalam file HTML</strong> (Judul, Token, Password, Durasi, Jumlah Soal, Excel Soal, Pengacakan, Status Reset, Score/KKM, Batas Pelanggaran, dan Google Sheet URL).
       </p>
@@ -666,6 +718,12 @@ const MAX_PELANGGARAN_DEFAULT = 6;
 const NILAI_MAKSIMAL_DEFAULT = 100;
 const NILAI_KKM_DEFAULT = 75;
 const TAMPIL_NILAI_DEFAULT = true;
+const GITHUB_TOKEN_DEFAULT = "";
+const GITHUB_OWNER_DEFAULT = "";
+const GITHUB_REPO_DEFAULT = "";
+const GITHUB_PATH_DEFAULT = "index.html";
+const GITHUB_BRANCH_DEFAULT = "main";
+const AUTO_PUSH_GITHUB_DEFAULT = false;
 const SOAL_DEFAULT = [{"q":"Siapakah yang disebut sebagai wirausahawan menurut teks materi?","o":["Seseorang yang memiliki kemampuan untuk mengatur dan mengembangkan suatu usaha","Seseorang yang hanya bekerja untuk mencari gaji bulanan","Seseorang yang menghindari segala bentuk risiko bisnis","Seseorang yang bergantung sepenuhnya pada investor","Seseorang yang bekerja di instansi pemerintah"],"a":0},{"q":"Berikut ini yang merupakan contoh wirausaha dalam pembuatan produk-produk teknik komputer dan informatika adalah...","o":["Pertanian hidroponik dan perikanan darat","Jasa pembuat brosur, poster, dan pembuatan web","Perdagangan barang konsumsi secara tradisional","Industri pengolahan bahan baku logam berat","Jasa konsultan hukum dan perpajakan"],"a":1},{"q":"Berdasarkan Tabel 1.1, faktor yang memengaruhi semangat kerja wirausaha yang berkaitan dengan adanya konsumen dan pemasok sebagai relasi bisnisnya adalah...","o":["Minat","Modal","Relasi","Peluang","Inovasi"],"a":2},{"q":"Salah satu faktor penyebab keberhasilan seorang wirausaha adalah...","o":["Cepat puas dengan hasil yang dicapai","Mengandalkan keberuntungan semata","Mengabaikan masukan dari konsumen","Memiliki kemampuan memimpin dan mengambil keputusan","Tidak memiliki perencanaan yang matang"],"a":3},{"q":"Faktor-faktor penyebab kegagalan seorang wirausaha di antaranya adalah...","o":["Memiliki relasi yang sangat luas","Selalu berorientasi pada keuntungan","Memiliki visi dan perspektif masa depan","Tekun dan disiplin dalam bekerja","Kurang ulet, cepat putus asa, dan kurang teliti"],"a":4},{"q":"Perbedaan persepsi antara wiraswasta dan wirausaha terletak pada penekanan. Wiraswasta lebih menekankan pada...","o":["Kemandirian (swasta) dan survival","Keahlian dalam mengelola keuangan korporat","Penguasaan teknologi informasi terkini","Ekspansi pasar ke luar negeri","Keuntungan finansial semata"],"a":0},{"q":"Berdasarkan data BPS Sensus Ekonomi 2016, jumlah wirausahawan di Indonesia mengalami kenaikan sekitar...","o":["1 juta orang dari hasil SE 2006","4 juta orang dari hasil SE 2006","10 juta orang dari hasil SE 2006","17 juta orang dari hasil SE 2006","22 juta orang dari hasil SE 2006"],"a":1},{"q":"Bekerja efektif dan efisien berarti...","o":["Bekerja tanpa henti mengorbankan waktu istirahat","Bekerja hanya ketika ada pengawasan dari atasan","Mencapai hasil sesuai rencana dengan pengorbanan waktu, tenaga, pikiran, dan biaya sekecil mungkin","Bekerja dengan biaya tinggi untuk hasil yang maksimal","Mengabaikan perencanaan demi kecepatan kerja"],"a":2},{"q":"Tiga tipe kreativitas yang dapat dilakukan oleh calon wirausaha adalah...","o":["Meniru, menyalin, dan mendistribusikan","Merencanakan, mengeksekusi, dan mengevaluasi","Mengamati, menanya, dan mengasosiasikan","Menciptakan, memodifikasi, dan mengombinasikan","Menghindar, menunda, dan menyerah"],"a":3},{"q":"Ciri-ciri seseorang yang memiliki motif berprestasi tinggi dalam wirausaha adalah...","o":["Menghindari tanggung jawab personal","Menyalahkan orang lain atas kegagalan","Tidak memerlukan umpan balik dari pasar","Takut menghadapi risiko yang diperhitungkan","Selalu memerlukan umpan balik yang segera untuk melihat keberhasilan dan kegagalan"],"a":4},{"q":"(Kasus) Seorang pemilik usaha percetakan gagal karena tidak mampu mengatur pengeluaran dan penerimaan secara cermat, sehingga aliran kas terhambat. Faktor kegagalan apa yang dialami?","o":["Kurang mampu dalam mengendalikan keuangan","Lokasi yang kurang memadai","Ketidakmampuan dalam melakukan transisi","Gagal dalam sebuah perencanaan","Kurangnya pengawasan peralatan"],"a":0},{"q":"Strategi awal dalam menjadi wirausaha dengan mencari pangsa pasar khusus yang kebutuhan utamanya belum terpenuhi oleh kompetitor disebut...","o":["Ekspansi pasar massal","Mencari pasar khusus (niche market)","Diversifikasi produk secara acak","Monopoli pasar lokal","Penetapan harga dumping"],"a":1},{"q":"Risiko yang tidak dapat diukur secara matematis disebut...","o":["Risiko biasa","Risiko sistemik","Risiko yang ambigu","Risiko murni","Risiko spekulatif"],"a":2},{"q":"Karakteristik wirausaha yang memiliki dorongan kuat, energik, memiliki ketekunan, dan berorientasi pada keuntungan disebut...","o":["Leadership","Orisinal","Risk and challenge","Profit oriented","Berorientasi pada masa depan"],"a":3},{"q":"Dalam identifikasi usaha berdasarkan karakteristik wirausaha, seorang wirausaha yang membuat keputusan secara cepat dengan penuh perhitungan menunjukkan sifat...","o":["Dream","Doers","Determination","Dedication","Decisiveness"],"a":4},{"q":"Mengakui jika memiliki kesalahan merupakan elemen penting dalam...","o":["Mentalitas seorang wirausaha tangguh","Strategi menghindari pajak","Teknik manipulasi pasar","Cara menutupi kelemahan produk","Metode menunda pengambilan keputusan"],"a":0},{"q":"Unsur penunjang bekerja efektif dan efisien yang berarti hemat dalam menggunakan waktu, tenaga, dan biaya adalah...","o":["Ketepatan","Penghematan","Kecermatan","Kecepatan","Keselamatan"],"a":1},{"q":"Tahap di mana ide bisnis yang cocok dibiarkan mengendap dahulu agar makin matang sebelum dibuat rencana disebut...","o":["Analisis SWOT","Eksekusi langsung","Masa inkubasi","Evaluasi akhir","Pembubaran tim"],"a":2},{"q":"Penghambat pemikiran kreatif berupa ketentuan atau karakteristik tertentu untuk suatu hal yang membatasi cara pandang disebut...","o":["Pemikiran lain","Pemikiran kemungkinan","Intuisi bisnis","Stereotip","Fleksibilitas"],"a":3},{"q":"Jika arah pendidikan adalah untuk menghasilkan sosok individu yang lebih lihai dalam bisnis/uang atau memiliki kecerdasan finansial (FQ), pendidikan yang lebih tepat adalah...","o":["Pendidikan akademik murni","Pendidikan vokasional tanpa praktik","Pendidikan karakter sosial","Pendidikan kewarganegaraan","Pendidikan wirausaha"],"a":4},{"q":"(Kasus) Seorang wirausaha desain grafis selalu meniru tren tanpa modifikasi dan cepat menyerah saat ada kritik minor. Faktor kegagalan yang paling dominan adalah...","o":["Kurang kreatif dan cepat putus asa","Memiliki modal yang terlalu besar","Terlalu banyak relasi bisnis","Lokasi usaha yang sangat strategis","Kelebihan dalam kemampuan manajerial"],"a":0},{"q":"Mengapa wirausaha di bidang produk kreatif teknik komputer dan informatika dituntut untuk kreatif, efektif, dan efisien?","o":["Agar dapat menghindari semua bentuk risiko","Untuk mencapai hasil sesuai rencana dengan pengorbanan sekecil mungkin","Supaya dapat meniru kompetitor dengan mudah","Agar tidak perlu berinteraksi dengan konsumen","Untuk menghabiskan modal usaha secepat mungkin"],"a":1},{"q":"Dalam konteks risiko, ketidakpastian murni didefinisikan sebagai...","o":["Risiko yang dapat dihitung dengan rumus statistik","Risiko yang hanya terjadi pada perusahaan besar","Ketidakpastian yang tidak bisa diukur dengan cara apa pun","Risiko yang sudah memiliki asuransi jaminan","Ketidakpastian yang dapat diprediksi dengan akurat"],"a":2},{"q":"Tindakan wirausaha yang bersedia mendistribusikan kepemilikan bisnisnya pada orang-orang kepercayaannya sesuai dengan karakteristik...","o":["Destiny","Dollars","Details","Distribute","Devotion"],"a":3},{"q":"Sifat pesimis pada wirausaha sebenarnya berkaitan erat dengan...","o":["Fokus seseorang akan peluang emas","Keyakinan pada keberhasilan jangka panjang","Kemampuan analisis data yang tinggi","Keberanian mengambil tantangan baru","Fokus seseorang akan kegagalan"],"a":4},{"q":"Contoh penerapan \"Melihat segala sesuatu dengan cara yang tidak biasa\" dalam kreativitas wirausaha adalah...","o":["Menemukan solusi desain yang tidak konvensional untuk masalah klien","Mengikuti semua instruksi klien tanpa pertanyaan","Meniru persis desain pesaing yang sedang viral","Menolak menggunakan teknologi baru dalam bekerja","Bekerja hanya pada jam kantor yang standar"],"a":0},{"q":"Apa tujuan utama dari analisis kekuatan, kelemahan, peluang, dan ancaman dalam perencanaan bekerja efektif?","o":["Untuk menakut-nakuti calon investor","Mengandung bahan-bahan yang sangat penting untuk perencanaan","Agar terlihat sibuk di depan karyawan","Untuk menunda peluncuran produk","Menghindari pembuatan laporan keuangan"],"a":1},{"q":"Seorang wirausaha yang mencintai pekerjaan bisnisnya dan produk yang dihasilkannya akan mendorong keberhasilan yang sangat efektif untuk menjual produknya. Ini adalah karakteristik...","o":["Dream","Doers","Devotion","Determination","Details"],"a":2},{"q":"Faktor eksternal yang dapat meningkatkan semangat kerja wirausaha menurut Tabel 1.1 adalah...","o":["Minat dan bakat alami","Modal pribadi yang besar","Kesehatan fisik yang prima","Peluang dan Relasi","Pendidikan formal yang tinggi"],"a":3},{"q":"Mengapa wirausaha harus menghindari kata-kata yang mematahkan semangat?","o":["Agar tidak perlu mendengarkan saran siapa pun","Karena semua kritik pasti salah dan tidak berguna","Supaya bisa sombong terhadap pesaing","Agar tidak perlu melakukan introspeksi diri","Agar usaha bisa maju dan tidak terhambat oleh kritik yang tidak masuk akal"],"a":4},{"q":"(Kasus) Sebuah startup pembuatan web mengalami kegagalan karena pendirinya tidak memiliki kemampuan mengelola SDM dan mengoordinasikan operasi. Berdasarkan materi, ini termasuk faktor kegagalan...","o":["Kurang berpengalaman baik dalam kemampuan teknik","Lokasi yang kurang memadai","Ketidakmampuan dalam melakukan transisi","Gagal dalam sebuah perencanaan","Kurangnya pengawasan peralatan"],"a":0},{"q":"Mengapa \"Dollars\" dalam karakteristik wirausaha (Tabel 1.3) menyatakan bahwa uang bukan motivasi utama, melainkan ukuran kesuksesan?","o":["Karena wirausaha dilarang mencari keuntungan","Karena motivasi wirausaha bukan karena masalah uang, tetapi uang dianggap sebagai ukuran kesuksesan bisnisnya","Karena uang tidak memiliki nilai dalam bisnis","Karena wirausaha hanya mengandalkan barter","Karena keuntungan hanya bersifat sementara"],"a":1},{"q":"Bagaimana hubungan antara sikap \"fleksibel\" dan \"berani mengambil risiko\" dalam menghadapi perubahan iklim usaha?","o":["Fleksibel berarti menolak perubahan, sedangkan risiko harus dihindari","Fleksibel hanya berlaku untuk usaha besar, risiko untuk usaha kecil","Sikap fleksibel adalah adaptif terhadap perubahan situasional, yang merupakan bentuk nyata dari keberanian mengambil risiko untuk bertahan","Tidak ada hubungan antara fleksibilitas dan pengambilan risiko","Fleksibel berarti mengubah tujuan bisnis setiap hari tanpa alasan"],"a":2},{"q":"Jika seorang wirausaha hanya berfokus pada \"pemikiran kemungkinan (probabilitas)\" secara berlebihan, apa dampak negatifnya terhadap kreativitas?","o":["Meningkatkan kecepatan inovasi secara drastis","Mempermudah pengambilan keputusan yang kompleks","Membuat wirausaha terlalu optimis tanpa dasar","Menghambat seseorang dalam menghadapi kenyataan yang sebenarnya dan melewatkan kesempatan yang hanya datang sekali","Membantu wirausaha menghindari semua bentuk kegagalan"],"a":3},{"q":"(Kasus) Seorang animator memiliki ide brilian tetapi terus menunda pelaksanaannya karena menunggu \"waktu yang paling tepat\". Menurut strategi wirausaha, apa kesalahan mendasarnya?","o":["Terlalu cepat dalam mengambil keputusan","Tidak melakukan analisis SWOT","Kelebihan modal dalam pengembangan ide","Mengabaikan kelemahan kompetitor","Tidak segera mengimplementasi ide menjadi sebuah tindakan, karena waktu paling tepat tidak bisa diprediksi"],"a":4},{"q":"Mengapa pendidikan wiraswasta lebih tepat untuk menghasilkan individu dengan kecerdasan emosional (EQ) dan adversitas (AQ)?","o":["Karena wiraswasta menekankan pada kemandirian, mental baja, dan menghadapi tantangan hidup","Karena wiraswasta hanya fokus pada perhitungan laba rugi","Karena wiraswasta tidak memerlukan interaksi sosial","Karena wiraswasta menjamin kekayaan instan","Karena wiraswasta menghindari tanggung jawab sosial"],"a":0},{"q":"Dalam konteks \"Destiny\" pada Tabel 1.3, seorang wirausaha bertanggung jawab terhadap nasibnya. Apa implikasi praktisnya dalam pengambilan keputusan bisnis?","o":["Selalu menunggu instruksi dari pemerintah","Tidak mau tergantung pada orang lain dalam menentukan arah dan tujuan bisnis","Menyerahkan semua keputusan kepada mitra bisnis","Mengandalkan keberuntungan dalam setiap langkah","Menghindari tanggung jawab atas kegagalan"],"a":1},{"q":"(Analisis) Seorang wirausaha jasa foto shooting gagal karena lokasinya di daerah yang sangat sepi dan sulit dijangkau, meskipun kualitas fotonya bagus. Ini adalah contoh faktor kegagalan...","o":["Sikap yang kurang sungguh-sungguh","Kurang berpengalaman dalam kemampuan teknik","Lokasi yang kurang memadai","Tidak kompeten dalam manajerial","Kurangnya pengawasan peralatan"],"a":2},{"q":"Bagaimana cara seorang wirausaha yang tangguh \"Mengenal Bisnis Anda\" sesuai dengan materi?","o":["Dengan mengucilkan diri dari lingkungan sekitar","Dengan menganggap bisnis sudah berjalan sempurna tanpa evaluasi","Dengan menutup diri dari kritik dan saran","Membuka diri terhadap informasi yang berkembang dan menghargai apa pun yang bisa membantu perkembangan bisnis","Dengan hanya fokus pada keuntungan jangka pendek"],"a":3},{"q":"Jika seorang wirausaha memiliki \"Dedication\" yang tinggi, bagaimana pola perilakunya terhadap kepentingan pribadi dan keluarga?","o":["Selalu mengutamakan liburan daripada pekerjaan","Tidak pernah bekerja di luar jam kantor","Mengabaikan bisnis demi kepentingan pribadi","Membagi waktu secara ketat tanpa fleksibilitas","Kadang-kadang mengorbankan kepentingan keluarga untuk sementara waktu, memusatkan semua perhatian pada bisnis"],"a":4},{"q":"(Kasus) Seorang wirausaha muda selalu meminta pendapat orang lain sebelum mengambil keputusan sekecil apa pun, sehingga proses bisnis menjadi sangat lambat. Karakteristik 10D yang paling dilanggar adalah...","o":["Decisiveness","Dream","Doers","Determination","Distribute"],"a":0},{"q":"Mengapa \"Kejujuran\" disebut sebagai modal awal yang sangat berharga bagi wirausahawan tangguh?","o":["Karena kejujuran membuat bisnis berjalan lambat tapi pasti","Karena kejujuran dapat menimbulkan respek dari konsumen dan menjamin keberlangsungan usaha","Karena kejujuran adalah syarat untuk mendapatkan modal bank","Karena kejujuran memudahkan dalam menipu pesaing","Karena kejujuran tidak memiliki dampak pada reputasi bisnis"],"a":1},{"q":"Dalam pengembangan kreativitas, \"Mengombinasikan\" berarti...","o":["Menghapus ide lama dan menggantinya dengan ide baru","Meniru ide orang lain tanpa perubahan","Aktivitas mengombinasikan dua hal atau lebih yang sebelumnya tidak saling berhubungan","Memisahkan ide menjadi bagian-bagian kecil","Menolak semua ide yang berasal dari luar"],"a":2},{"q":"Apa perbedaan mendasar antara \"Masa Inkubasi\" dan \"Gagal dalam sebuah perencanaan\"?","o":["Masa inkubasi adalah kegagalan total, sedangkan gagal perencanaan adalah sukses","Masa inkubasi dilakukan oleh manajer, gagal perencanaan oleh wirausaha","Masa inkubasi membutuhkan modal besar, gagal perencanaan tidak","Masa inkubasi adalah membiarkan ide mengendap agar matang, sedangkan gagal perencanaan adalah kesalahan dalam menyusun langkah awal yang mengakibatkan kesulitan pelaksanaan","Tidak ada perbedaan, keduanya adalah hal yang sama"],"a":3},{"q":"Seorang wirausaha berhasil mengidentifikasi keluhan pelanggan terhadap kompetitor dan menjadikannya peluang untuk menawarkan layanan yang lebih baik. Strategi apa yang diterapkan?","o":["Mencari pasar khusus yang belum tergarap","Peka terhadap tren terbaru","Segera mengimplementasi ide","Hindari kata-kata yang mematahkan semangat","Eksplorasikan kelemahan kompetitor"],"a":4},{"q":"Mengapa sifat \"optimis dengan masa depan\" penting, dan apa bahaya dari sifat kehati-hatian yang berlebihan?","o":["Optimis memelihara rencana dan tindakan, sedangkan kehati-hatian berlebihan dapat menyebabkan hilangnya peluang bisnis","Optimis membuat wirausaha ceroboh, kehati-hatian menjamin kesuksesan","Optimis tidak diperlukan, yang penting adalah pesimis","Kehati-hatian berlebihan selalu menghasilkan keuntungan maksimal","Optimis hanya berguna untuk usaha yang sudah besar"],"a":0},{"q":"Analisis data BPS: Peningkatan jumlah wirausaha di luar Pulau Jawa terjadi terutama karena...","o":["Ketatnya regulasi pemerintah di luar Jawa","Belum ketatnya persaingan usaha di luar Jawa dan percepatan pertumbuhan yang signifikan","Tingginya biaya hidup di Pulau Jawa","Kurangnya sumber daya alam di luar Jawa","Kebijakan larangan berwirausaha di Pulau Jawa"],"a":1},{"q":"Jenis risiko yang paling sering dihadapi oleh seorang pengusaha, terutama jika badan usaha yang dimilikinya mengeluarkan produk baru yang belum ada di pasaran, adalah...","o":["Risiko biasa","Risiko yang ambigu","Ketidakpastian murni","Risiko finansial terukur","Risiko operasional standar"],"a":2},{"q":"Seorang wirausaha desain grafis terus belajar software baru dan menyesuaikan gaya desain dengan tren terkini tanpa kehilangan jati diri. Ini mencerminkan karakteristik...","o":["Profit oriented","Risk and challenge","Leadership","Inovatif, kreatif, dan fleksibel","Destiny"],"a":3},{"q":"Kesimpulan utama dari perbedaan wirausaha yang sukses dan tidak lancar berdasarkan sikap dan perilaku adalah...","o":["Wirausaha sukses mengandalkan keberuntungan, yang tidak lancar karena nasib","Wirausaha sukses tidak pernah mengalami kegagalan sedikit pun","Wirausaha sukses selalu memiliki modal besar sejak awal","Wirausaha yang tidak lancar sebenarnya lebih kreatif daripada yang sukses","Wirausaha sukses memiliki sikap tangguh, berani mengambil risiko, dan terus berinovasi, sedangkan yang tidak lancar cenderung cepat putus asa dan kurang adaptif"],"a":4}];
 // __CONFIG_END__
 
@@ -680,6 +738,12 @@ let configMaxPelanggaran = parseInt(localStorage.getItem('configMaxPelanggaran')
 let configNilaiMaksimal = parseInt(localStorage.getItem('configNilaiMaksimal') || (typeof NILAI_MAKSIMAL_DEFAULT !== 'undefined' ? NILAI_MAKSIMAL_DEFAULT : 100));
 let configNilaiKKM = parseInt(localStorage.getItem('configNilaiKKM') || (typeof NILAI_KKM_DEFAULT !== 'undefined' ? NILAI_KKM_DEFAULT : 75));
 let configTampilNilai = localStorage.getItem('configTampilNilai') !== null ? localStorage.getItem('configTampilNilai') !== 'false' : (typeof TAMPIL_NILAI_DEFAULT !== 'undefined' ? TAMPIL_NILAI_DEFAULT : true);
+let configGithubToken = localStorage.getItem('configGithubToken') || (typeof GITHUB_TOKEN_DEFAULT !== 'undefined' ? GITHUB_TOKEN_DEFAULT : '');
+let configGithubOwner = localStorage.getItem('configGithubOwner') || (typeof GITHUB_OWNER_DEFAULT !== 'undefined' ? GITHUB_OWNER_DEFAULT : '');
+let configGithubRepo = localStorage.getItem('configGithubRepo') || (typeof GITHUB_REPO_DEFAULT !== 'undefined' ? GITHUB_REPO_DEFAULT : '');
+let configGithubPath = localStorage.getItem('configGithubPath') || (typeof GITHUB_PATH_DEFAULT !== 'undefined' ? GITHUB_PATH_DEFAULT : 'index.html');
+let configGithubBranch = localStorage.getItem('configGithubBranch') || (typeof GITHUB_BRANCH_DEFAULT !== 'undefined' ? GITHUB_BRANCH_DEFAULT : 'main');
+let configAutoPushGithub = localStorage.getItem('configAutoPushGithub') !== null ? localStorage.getItem('configAutoPushGithub') === 'true' : (typeof AUTO_PUSH_GITHUB_DEFAULT !== 'undefined' ? AUTO_PUSH_GITHUB_DEFAULT : false);
 // __RUNTIME_CONFIG_END__
 
 const UKURAN_KERTAS = {
@@ -758,6 +822,13 @@ function loadDashboardData() {
   document.getElementById('toggleEnableReset').checked = configEnableReset;
   document.getElementById('toggleAutoSaveHTML').checked = configAutoSaveHTML;
   updateStatusAcak(); updateStatusAcakOpsi(); updateStatusEnableReset(); updateStatusAutoSaveHTML();
+  document.getElementById('inputGithubToken').value = configGithubToken;
+  document.getElementById('inputGithubOwner').value = configGithubOwner;
+  document.getElementById('inputGithubRepo').value = configGithubRepo;
+  document.getElementById('inputGithubPath').value = configGithubPath;
+  document.getElementById('inputGithubBranch').value = configGithubBranch;
+  document.getElementById('toggleAutoPushGithub').checked = configAutoPushGithub;
+  updateStatusAutoPushGithub();
   document.getElementById('jumlahSoalSaatIni').innerText = soalAktif.length;
   document.getElementById('versionBadge').innerText = 'v' + HTML_VERSION;
   document.getElementById('currentVersionDisplay').innerText = 'v' + HTML_VERSION;
@@ -765,11 +836,17 @@ function loadDashboardData() {
 
 let autoSaveDebounceTimer = null;
 function triggerAutoSavePermanentHTML() {
-  if (!configAutoSaveHTML) return;
-  if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
-  autoSaveDebounceTimer = setTimeout(() => {
-    simpanPermanenKeHTML(true);
-  }, 1000);
+  if (configAutoSaveHTML || configAutoPushGithub) {
+    if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
+    autoSaveDebounceTimer = setTimeout(() => {
+      if (configAutoSaveHTML) {
+        simpanPermanenKeHTML(true);
+      }
+      if (configAutoPushGithub) {
+        syncKeGitHub(true);
+      }
+    }, 1000);
+  }
 }
 
 function simpanAutoSaveHTMLToggle() {
@@ -778,6 +855,280 @@ function simpanAutoSaveHTMLToggle() {
   updateStatusAutoSaveHTML();
   if (configAutoSaveHTML) {
     triggerAutoSavePermanentHTML();
+  }
+}
+
+
+function simpanAutoPushGithubToggle() {
+  configAutoPushGithub = document.getElementById('toggleAutoPushGithub').checked;
+  localStorage.setItem('configAutoPushGithub', configAutoPushGithub);
+  updateStatusAutoPushGithub();
+  if (configAutoPushGithub) {
+    syncKeGitHub(true);
+  }
+}
+
+function updateStatusAutoPushGithub() {
+  const status = document.getElementById('statusAutoPushGithub');
+  if (!status) return;
+  if (configAutoPushGithub) {
+    status.innerText = 'AKTIF';
+    status.className = 'status-badge status-on';
+  } else {
+    status.innerText = 'NONAKTIF';
+    status.className = 'status-badge status-off';
+  }
+}
+
+function simpanKonfigurasiGithub() {
+  const token = document.getElementById('inputGithubToken').value.trim();
+  const owner = document.getElementById('inputGithubOwner').value.trim();
+  const repo = document.getElementById('inputGithubRepo').value.trim();
+  const path = document.getElementById('inputGithubPath').value.trim() || 'index.html';
+  const branch = document.getElementById('inputGithubBranch').value.trim() || 'main';
+
+  configGithubToken = token;
+  configGithubOwner = owner;
+  configGithubRepo = repo;
+  configGithubPath = path;
+  configGithubBranch = branch;
+
+  localStorage.setItem('configGithubToken', configGithubToken);
+  localStorage.setItem('configGithubOwner', configGithubOwner);
+  localStorage.setItem('configGithubRepo', configGithubRepo);
+  localStorage.setItem('configGithubPath', configGithubPath);
+  localStorage.setItem('configGithubBranch', configGithubBranch);
+
+  document.getElementById('statusGithubSync').innerHTML = '<div class="alert-success">✅ Konfigurasi GitHub berhasil disimpan!</div>';
+  triggerAutoSavePermanentHTML();
+}
+
+function encodeUtf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function dapatkanGeneratedHtml() {
+  const savedState = {
+    menuAwal: document.getElementById('menuAwal').style.display,
+    identityForm: document.getElementById('identityForm').style.display,
+    dashboardGuru: document.getElementById('dashboardGuru').style.display,
+    quizArea: document.getElementById('quizArea').style.display,
+    resultArea: document.getElementById('resultArea').style.display,
+    loginModal: document.getElementById('loginModal').style.display,
+    resetModal: document.getElementById('resetModal').style.display,
+    violationOverlay: document.getElementById('violationOverlay').style.display
+  };
+
+  document.getElementById('menuAwal').style.display = 'block';
+  document.getElementById('identityForm').style.display = 'none';
+  document.getElementById('dashboardGuru').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('loginModal').style.display = 'none';
+  document.getElementById('resetModal').style.display = 'none';
+  document.getElementById('violationOverlay').style.display = 'none';
+
+  ['statusJudul','statusPassword','statusWaktu','statusImport','statusPengaturanNilai','statusMaxPelanggaran','statusGoogleSheet','statusResetSiswa','statusSimpanPermanen','statusSimpanSemua','statusGithubSync'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+
+  let htmlText = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+  document.getElementById('menuAwal').style.display = savedState.menuAwal;
+  document.getElementById('identityForm').style.display = savedState.identityForm;
+  document.getElementById('dashboardGuru').style.display = savedState.dashboardGuru;
+  document.getElementById('quizArea').style.display = savedState.quizArea;
+  document.getElementById('resultArea').style.display = savedState.resultArea;
+  document.getElementById('loginModal').style.display = savedState.loginModal;
+  document.getElementById('resetModal').style.display = savedState.resetModal;
+  document.getElementById('violationOverlay').style.display = savedState.violationOverlay;
+
+  const newVersion = incrementVersion(HTML_VERSION);
+  localStorage.setItem('htmlVersion', newVersion);
+
+  const newConfigLines = [
+    '// __CONFIG_START__',
+    'const JUDUL_DEFAULT = ' + JSON.stringify(configJudul) + ';',
+    'const SUBJUDUL_DEFAULT = ' + JSON.stringify(configSubJudul) + ';',
+    'const PASSWORD_DEFAULT = ' + JSON.stringify(PASSWORD_GURU) + ';',
+    'const TOKEN_DEFAULT = ' + JSON.stringify(configToken) + ';',
+    'const GOOGLE_SHEET_URL_DEFAULT = ' + JSON.stringify(configGoogleSheetUrl) + ';',
+    'const DURASI_DEFAULT = ' + JSON.stringify(configDurasi) + ';',
+    'const JUMLAH_SOAL_DEFAULT = ' + JSON.stringify(configJumlahSoal) + ';',
+    'const ACAK_DEFAULT = ' + JSON.stringify(configAcak) + ';',
+    'const ACAK_OPSI_DEFAULT = ' + JSON.stringify(configAcakOpsi) + ';',
+    'const ENABLE_RESET_DEFAULT = ' + JSON.stringify(configEnableReset) + ';',
+    'const AUTO_SAVE_HTML_DEFAULT = ' + JSON.stringify(configAutoSaveHTML) + ';',
+    'const MAX_PELANGGARAN_DEFAULT = ' + JSON.stringify(configMaxPelanggaran) + ';',
+    'const NILAI_MAKSIMAL_DEFAULT = ' + JSON.stringify(configNilaiMaksimal) + ';',
+    'const NILAI_KKM_DEFAULT = ' + JSON.stringify(configNilaiKKM) + ';',
+    'const TAMPIL_NILAI_DEFAULT = ' + JSON.stringify(configTampilNilai) + ';',
+    'const GITHUB_TOKEN_DEFAULT = ' + JSON.stringify(configGithubToken) + ';',
+    'const GITHUB_OWNER_DEFAULT = ' + JSON.stringify(configGithubOwner) + ';',
+    'const GITHUB_REPO_DEFAULT = ' + JSON.stringify(configGithubRepo) + ';',
+    'const GITHUB_PATH_DEFAULT = ' + JSON.stringify(configGithubPath) + ';',
+    'const GITHUB_BRANCH_DEFAULT = ' + JSON.stringify(configGithubBranch) + ';',
+    'const AUTO_PUSH_GITHUB_DEFAULT = ' + JSON.stringify(configAutoPushGithub) + ';',
+    'const SOAL_DEFAULT = ' + JSON.stringify(soalAktif) + ';',
+    '// __CONFIG_END__'
+  ];
+  const newConfigBlock = newConfigLines.join('\n');
+
+  const newRuntimeLines = [
+    '// __RUNTIME_CONFIG_START__',
+    'let configDurasi = parseInt(localStorage.getItem("configDurasi") || (typeof DURASI_DEFAULT !== "undefined" ? DURASI_DEFAULT : ' + configDurasi + '));',
+    'let configJumlahSoal = parseInt(localStorage.getItem("configJumlahSoal") || (typeof JUMLAH_SOAL_DEFAULT !== "undefined" ? JUMLAH_SOAL_DEFAULT : ' + configJumlahSoal + '));',
+    'let configAcak = localStorage.getItem("configAcak") !== null ? localStorage.getItem("configAcak") === "true" : (typeof ACAK_DEFAULT !== "undefined" ? ACAK_DEFAULT : ' + configAcak + ');',
+    'let configAcakOpsi = localStorage.getItem("configAcakOpsi") !== null ? localStorage.getItem("configAcakOpsi") === "true" : (typeof ACAK_OPSI_DEFAULT !== "undefined" ? ACAK_OPSI_DEFAULT : ' + configAcakOpsi + ');',
+    'let configEnableReset = localStorage.getItem("configEnableReset") !== null ? localStorage.getItem("configEnableReset") === "true" : (typeof ENABLE_RESET_DEFAULT !== "undefined" ? ENABLE_RESET_DEFAULT : ' + configEnableReset + ');',
+    'let configAutoSaveHTML = localStorage.getItem("configAutoSaveHTML") !== null ? localStorage.getItem("configAutoSaveHTML") === "true" : (typeof AUTO_SAVE_HTML_DEFAULT !== "undefined" ? AUTO_SAVE_HTML_DEFAULT : ' + configAutoSaveHTML + ');',
+    'let configMaxPelanggaran = parseInt(localStorage.getItem("configMaxPelanggaran") || (typeof MAX_PELANGGARAN_DEFAULT !== "undefined" ? MAX_PELANGGARAN_DEFAULT : ' + configMaxPelanggaran + '));',
+    'let configNilaiMaksimal = parseInt(localStorage.getItem("configNilaiMaksimal") || (typeof NILAI_MAKSIMAL_DEFAULT !== "undefined" ? NILAI_MAKSIMAL_DEFAULT : ' + configNilaiMaksimal + '));',
+    'let configNilaiKKM = parseInt(localStorage.getItem("configNilaiKKM") || (typeof NILAI_KKM_DEFAULT !== "undefined" ? NILAI_KKM_DEFAULT : ' + configNilaiKKM + '));',
+    'let configTampilNilai = localStorage.getItem("configTampilNilai") !== null ? localStorage.getItem("configTampilNilai") !== "false" : (typeof TAMPIL_NILAI_DEFAULT !== "undefined" ? TAMPIL_NILAI_DEFAULT : ' + configTampilNilai + ');',
+    'let configGithubToken = localStorage.getItem("configGithubToken") || (typeof GITHUB_TOKEN_DEFAULT !== "undefined" ? GITHUB_TOKEN_DEFAULT : ' + JSON.stringify(configGithubToken) + ');',
+    'let configGithubOwner = localStorage.getItem("configGithubOwner") || (typeof GITHUB_OWNER_DEFAULT !== "undefined" ? GITHUB_OWNER_DEFAULT : ' + JSON.stringify(configGithubOwner) + ');',
+    'let configGithubRepo = localStorage.getItem("configGithubRepo") || (typeof GITHUB_REPO_DEFAULT !== "undefined" ? GITHUB_REPO_DEFAULT : ' + JSON.stringify(configGithubRepo) + ');',
+    'let configGithubPath = localStorage.getItem("configGithubPath") || (typeof GITHUB_PATH_DEFAULT !== "undefined" ? GITHUB_PATH_DEFAULT : ' + JSON.stringify(configGithubPath) + ');',
+    'let configGithubBranch = localStorage.getItem("configGithubBranch") || (typeof GITHUB_BRANCH_DEFAULT !== "undefined" ? GITHUB_BRANCH_DEFAULT : ' + JSON.stringify(configGithubBranch) + ');',
+    'let configAutoPushGithub = localStorage.getItem("configAutoPushGithub") !== null ? localStorage.getItem("configAutoPushGithub") === "true" : (typeof AUTO_PUSH_GITHUB_DEFAULT !== "undefined" ? AUTO_PUSH_GITHUB_DEFAULT : ' + configAutoPushGithub + ');',
+    '// __RUNTIME_CONFIG_END__'
+  ];
+  const newRuntimeConfigBlock = newRuntimeLines.join('\n');
+
+  htmlText = htmlText.replace(/\/\/ __CONFIG_START__[\s\S]*?\/\/ __CONFIG_END__/, () => newConfigBlock);
+  htmlText = htmlText.replace(/\/\/ __RUNTIME_CONFIG_START__[\s\S]*?\/\/ __RUNTIME_CONFIG_END__/, () => newRuntimeConfigBlock);
+  htmlText = htmlText.replace(/const HTML_VERSION = "[^"]*";/, 'const HTML_VERSION = "' + newVersion + '";');
+
+  const versionBadges = document.querySelectorAll('#versionBadge, #currentVersionDisplay');
+  versionBadges.forEach(el => el.innerText = 'v' + newVersion);
+
+  return { html: htmlText, newVersion };
+}
+
+async function syncKeGitHub(isAutoSync = false) {
+  const token = configGithubToken.trim();
+  const owner = configGithubOwner.trim();
+  const repo = configGithubRepo.trim();
+  const path = (configGithubPath.trim() || 'index.html').replace(/^\//, '');
+  const branch = configGithubBranch.trim() || 'main';
+
+  const statusElem = document.getElementById('statusGithubSync');
+
+  if (!token || !owner || !repo) {
+    if (!isAutoSync && statusElem) {
+      statusElem.innerHTML = '<div class="alert-error">❌ Token, Owner, dan Nama Repo GitHub harus diisi terlebih dahulu!</div>';
+    }
+    return false;
+  }
+
+  if (statusElem) {
+    statusElem.innerHTML = '<div class="alert-info">⏳ Sedang menghubungkan & mengunggah perubahan ke GitHub...</div>';
+  }
+
+  try {
+    const getUrl = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + path + '?ref=' + branch;
+    const getRes = await fetch(getUrl, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    let sha = null;
+    if (getRes.ok) {
+      const fileData = await getRes.json();
+      sha = fileData.sha;
+    } else if (getRes.status !== 404) {
+      const errData = await getRes.json().catch(() => ({}));
+      throw new Error(errData.message || ('Gagal mengambil informasi file dari GitHub (Status: ' + getRes.status + ')'));
+    }
+
+    const { html, newVersion } = dapatkanGeneratedHtml();
+    const contentBase64 = encodeUtf8ToBase64(html);
+
+    const putUrl = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + path;
+    const commitMessage = 'Auto-update ' + path + ' v' + newVersion + ' via Evaluasi PKK App';
+
+    const bodyData = {
+      message: commitMessage,
+      content: contentBase64,
+      branch: branch
+    };
+    if (sha) bodyData.sha = sha;
+
+    const putRes = await fetch(putUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bodyData)
+    });
+
+    if (!putRes.ok) {
+      const errData = await putRes.json().catch(() => ({}));
+      throw new Error(errData.message || ('Gagal commit/push ke GitHub (Status: ' + putRes.status + ')'));
+    }
+
+    const resData = await putRes.json();
+    const commitUrl = resData.commit ? resData.commit.html_url : '#';
+
+    if (statusElem) {
+      statusElem.innerHTML = '<div class="alert-success">✅ <strong>BERHASIL DIPERBARUI DI GITHUB!</strong><br>File HTML di repo <strong>' + owner + '/' + repo + '</strong> berhasil ter-update (v' + newVersion + ').<br>🌐 Perubahan akan tampil di GitHub Pages secara otomatis tanpa download HTML.<br><a href="' + commitUrl + '" target="_blank" style="color:var(--accent-blue); font-weight:bold;">🔗 Lihat Commit GitHub</a></div>';
+    }
+    return true;
+  } catch (err) {
+    console.error('Error Sync GitHub:', err);
+    if (statusElem) {
+      statusElem.innerHTML = '<div class="alert-error">❌ Gagal Sync ke GitHub: ' + err.message + '</div>';
+    }
+    return false;
+  }
+}
+
+function syncKeGitHubManually() {
+  simpanSemuaPengaturan();
+  syncKeGitHub(false);
+}
+
+async function tesKoneksiGithub() {
+  const token = document.getElementById('inputGithubToken').value.trim();
+  const owner = document.getElementById('inputGithubOwner').value.trim();
+  const repo = document.getElementById('inputGithubRepo').value.trim();
+  const statusElem = document.getElementById('statusGithubSync');
+
+  if (!token || !owner || !repo) {
+    statusElem.innerHTML = '<div class="alert-error">❌ Isi Token, Owner, dan Repo untuk mengetes koneksi!</div>';
+    return;
+  }
+
+  statusElem.innerHTML = '<div class="alert-info">⏳ Memeriksa koneksi ke GitHub Repository...</div>';
+
+  try {
+    const res = await fetch('https://api.github.com/repos/' + owner + '/' + repo, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      statusElem.innerHTML = '<div class="alert-success">✅ Koneksi Berhasil! Repositori <strong>' + data.full_name + '</strong> ditemukan dan token valid.</div>';
+    } else {
+      const err = await res.json().catch(() => ({}));
+      statusElem.innerHTML = '<div class="alert-error">❌ Gagal terhubung ke GitHub: ' + (err.message || ('Status ' + res.status)) + '</div>';
+    }
+  } catch (err) {
+    statusElem.innerHTML = '<div class="alert-error">❌ Error koneksi: ' + err.message + '</div>';
   }
 }
 
@@ -1346,7 +1697,10 @@ function simpanSemuaPengaturan() {
 
     const statusElem = document.getElementById('statusSimpanSemua');
     if (statusElem) {
-      statusElem.innerHTML = '<div class="alert-success">✅ <strong>SEMUA PENGATURAN BERHASIL DISIMPAN!</strong><br>Seluruh perubahan telah tersimpan di browser Anda.<br>📌 Klik <strong>"Download HTML Terbaru"</strong> jika ingin membagikan file HTML terkini ke siswa.</div>';
+      statusElem.innerHTML = '<div class="alert-success">✅ <strong>SEMUA PENGATURAN BERHASIL DISIMPAN!</strong><br>Seluruh perubahan telah tersimpan di browser Anda.' + (configAutoPushGithub ? '<br>⚡ Mengunggah perubahan otomatis ke GitHub...' : '<br>📌 Klik <strong>"Download HTML Terbaru"</strong> jika ingin membagikan file HTML terkini ke siswa.') + '</div>';
+    }
+    if (configAutoPushGithub) {
+      syncKeGitHub(true);
     }
   } catch (err) {
     const statusElem = document.getElementById('statusSimpanSemua');
