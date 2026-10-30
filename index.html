@@ -20,6 +20,10 @@
     -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
     user-select: none; -webkit-touch-callout: none; box-sizing: border-box;
   }
+  input, select, textarea, #dashboardGuru, #dashboardGuru * {
+    -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text;
+    user-select: text;
+  }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-primary); margin: 0; padding: 20px; min-height: 100vh;
@@ -249,7 +253,7 @@
   .print-preview-page .kunci-jawaban h3 { text-align: left; font-weight: bold; }
 </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Mode Gelap">🌙</button>
 
@@ -1740,6 +1744,7 @@ function enterFullscreen() { const elem = document.documentElement; if (elem.req
 function exitFullscreen() { if (document.exitFullscreen) document.exitFullscreen().catch(()=>{}); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); }
 document.addEventListener('fullscreenchange', handleFullscreenChange); document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 function handleFullscreenChange() { const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement); if (!isFullscreen && isFullscreenActive && statusUjian === 'berlangsung') { catatPelanggaran('Keluar dari mode fullscreen'); tampilkanOverlayPelanggaran('Anda keluar dari mode fullscreen!'); setTimeout(() => { if (statusUjian === 'berlangsung') enterFullscreen(); }, 3500); } }
+document.addEventListener('contextmenu', e => { if (statusUjian === 'berlangsung') { e.preventDefault(); } });
 document.addEventListener('copy', e => { if (statusUjian === 'berlangsung') { e.preventDefault(); catatPelanggaran('Percobaan copy teks'); } });
 document.addEventListener('cut', e => { if (statusUjian === 'berlangsung') { e.preventDefault(); catatPelanggaran('Percobaan cut teks'); } });
 document.addEventListener('paste', e => { if (statusUjian === 'berlangsung') { e.preventDefault(); } });
