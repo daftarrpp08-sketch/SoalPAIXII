@@ -836,10 +836,15 @@ function loadDashboardData() {
   document.getElementById('jumlahSoalSaatIni').innerText = soalAktif.length;
   document.getElementById('versionBadge').innerText = 'v' + HTML_VERSION;
   document.getElementById('currentVersionDisplay').innerText = 'v' + HTML_VERSION;
+  perbaruiIndikatorStatusOffline();
 }
 
 let autoSaveDebounceTimer = null;
 function triggerAutoSavePermanentHTML() {
+  if (configAutoPushGithub) {
+    localStorage.setItem('pendingGithubSync', 'true');
+    perbaruiIndikatorStatusOffline();
+  }
   if (configAutoSaveHTML || configAutoPushGithub) {
     if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
     autoSaveDebounceTimer = setTimeout(() => {
@@ -850,6 +855,20 @@ function triggerAutoSavePermanentHTML() {
         syncKeGitHub(true);
       }
     }, 1000);
+  }
+}
+
+function perbaruiIndikatorStatusOffline() {
+  const statusElem = document.getElementById('statusGithubSync');
+  const isPending = localStorage.getItem('pendingGithubSync') === 'true';
+  if (!statusElem) return;
+
+  if (isPending) {
+    if (!navigator.onLine) {
+      statusElem.innerHTML = '<div class="alert-info">📡 <strong>Kondisi OFFLINE:</strong> Seluruh perubahan data telah tersimpan aman di browser (HP/Laptop) &amp; akan otomatis di-sync ke GitHub saat terhubung kembali ke internet.</div>';
+    } else {
+      statusElem.innerHTML = '<div class="alert-info">⏳ Ada perubahan data yang menunggu sinkronisasi ke GitHub... <button onclick="prosesAntreanGithub()" class="btn btn-warning" style="padding:2px 8px; font-size:11px; margin-left:5px;">⚡ Sync Sekarang</button></div>';
+    }
   }
 }
 
@@ -1016,6 +1035,15 @@ function dapatkanGeneratedHtml() {
   return { html: htmlText, newVersion };
 }
 
+let isSyncingGithub = false;
+
+async function prosesAntreanGithub() {
+  if (isSyncingGithub) return;
+  if (localStorage.getItem('pendingGithubSync') !== 'true') return;
+  if (!configGithubToken || !configGithubOwner || !configGithubRepo) return;
+  await syncKeGitHub(true);
+}
+
 async function syncKeGitHub(isAutoSync = false) {
   const token = configGithubToken.trim();
   const owner = configGithubOwner.trim();
@@ -1032,9 +1060,25 @@ async function syncKeGitHub(isAutoSync = false) {
     return false;
   }
 
+  // Tandai antrean sinkronisasi
+  localStorage.setItem('pendingGithubSync', 'true');
+
+  if (!navigator.onLine) {
+    if (statusElem) {
+      statusElem.innerHTML = '<div class="alert-info">📡 <strong>Perangkat OFFLINE:</strong> Semua perubahan disimpan lokal di browser. Sinkronisasi ke GitHub akan berjalan otomatis saat terhubung kembali ke internet.</div>';
+    }
+    return false;
+  }
+
+  if (isSyncingGithub) return false;
+  isSyncingGithub = true;
+
   if (statusElem) {
     statusElem.innerHTML = '<div class="alert-info">⏳ Sedang menghubungkan & mengunggah perubahan ke GitHub...</div>';
   }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
     const getUrl = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + path + '?ref=' + branch;
@@ -1042,7 +1086,8 @@ async function syncKeGitHub(isAutoSync = false) {
       headers: {
         'Authorization': 'Bearer ' + token,
         'Accept': 'application/vnd.github.v3+json'
-      }
+      },
+      signal: controller.signal
     });
 
     let sha = null;
@@ -1074,8 +1119,11 @@ async function syncKeGitHub(isAutoSync = false) {
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(bodyData)
+      body: JSON.stringify(bodyData),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!putRes.ok) {
       const errData = await putRes.json().catch(() => ({}));
@@ -1085,16 +1133,22 @@ async function syncKeGitHub(isAutoSync = false) {
     const resData = await putRes.json();
     const commitUrl = resData.commit ? resData.commit.html_url : '#';
 
+    // Berhasil sync, hapus penanda antrean
+    localStorage.removeItem('pendingGithubSync');
+
     if (statusElem) {
-      statusElem.innerHTML = '<div class="alert-success">✅ <strong>BERHASIL DIPERBARUI DI GITHUB!</strong><br>File HTML di repo <strong>' + owner + '/' + repo + '</strong> berhasil ter-update (v' + newVersion + ').<br>🌐 Perubahan akan tampil di GitHub Pages secara otomatis tanpa download HTML.<br><a href="' + commitUrl + '" target="_blank" style="color:var(--accent-blue); font-weight:bold;">🔗 Lihat Commit GitHub</a></div>';
+      statusElem.innerHTML = '<div class="alert-success">✅ <strong>BERHASIL DISINKRONKAN KE GITHUB!</strong><br>File HTML di repo <strong>' + owner + '/' + repo + '</strong> berhasil ter-update (v' + newVersion + ').<br>🌐 Perubahan akan tampil di GitHub Pages secara otomatis tanpa download HTML.<br><a href="' + commitUrl + '" target="_blank" style="color:var(--accent-blue); font-weight:bold;">🔗 Lihat Commit GitHub</a></div>';
     }
     return true;
   } catch (err) {
+    clearTimeout(timeoutId);
     console.error('Error Sync GitHub:', err);
     if (statusElem) {
-      statusElem.innerHTML = '<div class="alert-error">❌ Gagal Sync ke GitHub: ' + err.message + '</div>';
+      statusElem.innerHTML = '<div class="alert-info">📡 <strong>Sinkronisasi tertunda (koneksi offline/terputus):</strong> Semua perubahan telah aman tersimpan di browser &amp; akan otomatis di-sync begitu koneksi internet stabil. <button onclick="prosesAntreanGithub()" class="btn btn-warning" style="padding:2px 8px; font-size:11px; margin-left:5px;">🔄 Coba Lagi</button></div>';
     }
     return false;
+  } finally {
+    isSyncingGithub = false;
   }
 }
 
@@ -2042,15 +2096,30 @@ function konfirmasiReset() {
 }
 
 window.addEventListener('online', () => {
-  console.log('Koneksi terdeteksi (online). Memproses antrean pengiriman nilai...');
+  console.log('Koneksi terdeteksi (online). Memproses antrean sinkronisasi data...');
   prosesAntreanSheet();
+  if (configAutoPushGithub && localStorage.getItem('pendingGithubSync') === 'true') {
+    prosesAntreanGithub();
+  } else {
+    perbaruiIndikatorStatusOffline();
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log('Perangkat terdeteksi offline.');
+  perbaruiIndikatorStatusOffline();
 });
 
 setInterval(() => {
-  if (localStorage.getItem('pendingSheetPayload') && navigator.onLine) {
-    prosesAntreanSheet();
+  if (navigator.onLine) {
+    if (localStorage.getItem('pendingSheetPayload')) {
+      prosesAntreanSheet();
+    }
+    if (configAutoPushGithub && localStorage.getItem('pendingGithubSync') === 'true') {
+      prosesAntreanGithub();
+    }
   }
-}, 10000);
+}, 5000);
 
 window.onload = function() {
   if (localStorage.getItem('darkMode') === 'true') { document.body.classList.add('dark-mode'); document.querySelector('.dark-mode-toggle').innerText = '☀️'; }
@@ -2082,6 +2151,13 @@ window.onload = function() {
     document.getElementById('menuAwal').style.display = 'none'; tampilkanHasil(parseInt(nilai), benar, isAutoSubmit);
     if (localStorage.getItem('pendingSheetPayload')) {
       prosesAntreanSheet();
+    }
+  }
+  if (configAutoPushGithub && localStorage.getItem('pendingGithubSync') === 'true') {
+    if (navigator.onLine) {
+      prosesAntreanGithub();
+    } else {
+      perbaruiIndikatorStatusOffline();
     }
   }
 };
